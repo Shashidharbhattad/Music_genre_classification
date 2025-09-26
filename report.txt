@@ -1,0 +1,214 @@
+
+Music Genre Classification System — Deep Learning Project
+========================================================
+
+Project Title:
+--------------
+Music Genre Classification System – Deep Learning Project
+
+Abstract:
+---------
+With the rapid growth of digital music platforms, automatic music genre classification is essential for organizing, recommending, and retrieving music. This project builds a deep learning-based system to classify music tracks into genres using audio feature extraction (MFCCs, spectrograms, chroma) and convolutional and recurrent neural networks. The system is trained and evaluated on standard datasets with metrics such as accuracy, precision, recall, and F1-score.
+
+1. Introduction
+---------------
+Music genre classification assigns labels (genres) to audio tracks automatically. Manual labeling is time-consuming and inconsistent; automated systems enable better organization and personalized recommendations. Deep learning models — especially CNNs and CRNNs — perform well on spectrogram-like inputs.
+
+2. Problem Statement
+--------------------
+Design and implement a deep learning model that classifies music tracks into different genres, extracting meaningful features from audio signals, comparing architectures (CNN, RNN, CRNN), and evaluating model performance.
+
+3. Objectives
+-------------
+• Design and implement a deep learning model to classify music tracks.
+• Extract features: spectrograms, MFCCs, chroma features.
+• Compare architectures: CNN, RNN, CRNN.
+• Evaluate performance across datasets and metrics.
+
+4. Scope
+--------
+In-Scope:
+• Building deep learning model(s) for genre classification.
+• Audio preprocessing and feature extraction.
+• Use public datasets (e.g., GTZAN).
+• Evaluate using accuracy, precision, recall, F1-score.
+
+Out-of-Scope:
+• Real-time streaming/live classification.
+• Multi-label genre classification.
+• Integration with commercial music platforms.
+
+5. Tools & Technologies
+-----------------------
+• Language: Python
+• Libraries: TensorFlow/Keras or PyTorch, Librosa, NumPy, Pandas, Matplotlib
+• Tools: Jupyter Notebook / Google Colab, VS Code
+• Datasets: GTZAN (commonly used), Free Music Archive subsets, Million Song Dataset (large)
+
+6. Literature Review (brief)
+----------------------------
+• Tzanetakis & Cook (2002) — early work on musical genre classification using timbral, rhythmic, and pitch features.
+• Recent works: Using CNNs on mel-spectrograms achieves strong performance (e.g., Choi et al., 2017).
+• CRNNs (CNN + RNN) capture both local time-frequency patterns and temporal dependencies.
+
+7. Dataset
+----------
+Example dataset: GTZAN
+• 1000 audio tracks (30 sec each), 10 genres, 100 tracks per genre.
+• Preprocessing: resampling (e.g., 22,050 Hz), trimming/padding, mono conversion.
+
+Data split:
+• Train / Validation / Test = 70 / 15 / 15 (or use cross-validation).
+
+8. Data Preprocessing
+---------------------
+• Load audio using librosa.load(path, sr=22050, mono=True).
+• Normalize audio amplitude.
+• Trim leading/trailing silence (optional).
+• Convert to fixed-length clips (e.g., 30s → frames or segment into 3s windows).
+• Augmentation (optional): time-stretching, pitch shifting, adding noise.
+
+9. Feature Extraction
+---------------------
+Common features:
+• Mel-spectrograms (log scale): convert STFT → mel filterbanks → log.
+• MFCCs: commonly use 13–40 coefficients over frames.
+• Chroma features: 12-bin chromagram (useful for harmonic/tonal info).
+• Delta / Delta-Delta (derivatives) to capture temporal dynamics.
+
+Example: For CNNs use mel-spectrogram inputs shaped (n_mels, time_steps, 1).
+
+10. Model Architectures (Design & Examples)
+-------------------------------------------
+
+A. CNN (baseline)
+• Input: mel-spectrogram (e.g., 128 x 644 x 1)
+• Conv2D → BatchNorm → ReLU → MaxPool (repeat)
+• GlobalAveragePooling2D
+• Dense(128) → Dropout(0.5)
+• Dense(num_genres, activation='softmax')
+
+B. CRNN (recommended)
+• CNN feature extractor (several Conv2D blocks)
+• Reshape/permute to (time_steps, features)
+• Bidirectional GRU / LSTM layers
+• Dense softmax output
+
+C. RNN (less common alone)
+• Extract frame-level features (e.g., MFCC per frame)
+• Feed sequences to LSTM/GRU
+• Dense softmax output
+
+11. Example Keras CNN Model (code snippet)
+------------------------------------------
+```python
+import tensorflow as tf
+from tensorflow.keras import layers, models
+
+def build_cnn(input_shape=(128, 644, 1), num_classes=10):
+    inp = layers.Input(shape=input_shape)
+    x = layers.Conv2D(32, (3,3), activation='relu', padding='same')(inp)
+    x = layers.BatchNormalization()(x)
+    x = layers.MaxPooling2D((2,2))(x)
+
+    x = layers.Conv2D(64, (3,3), activation='relu', padding='same')(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.MaxPooling2D((2,2))(x)
+
+    x = layers.Conv2D(128, (3,3), activation='relu', padding='same')(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.MaxPooling2D((2,2))(x)
+
+    x = layers.GlobalAveragePooling2D()(x)
+    x = layers.Dense(128, activation='relu')(x)
+    x = layers.Dropout(0.5)(x)
+    out = layers.Dense(num_classes, activation='softmax')(x)
+
+    model = models.Model(inputs=inp, outputs=out)
+    return model
+```
+
+12. Training Setup
+------------------
+• Loss: categorical_crossentropy
+• Optimizer: Adam (lr = 1e-3 with ReduceLROnPlateau)
+• Metrics: accuracy, precision, recall (use tf.keras.metrics or sklearn)
+• Batch size: 16–64 depending on GPU memory
+• Epochs: 30–100 with early stopping on validation loss
+• Callbacks: ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
+
+13. Evaluation
+--------------
+• Calculate confusion matrix, per-class precision/recall/F1.
+• Use cross-validation where possible.
+• Report overall accuracy and macro-averaged F1 (useful for class imbalance).
+
+14. Expected Results & Benchmarks
+--------------------------------
+• Simple CNN on GTZAN can achieve 80%+ accuracy with good preprocessing and augmentation.
+• CRNNs often outperform simple CNN by modeling temporal dependencies.
+• Report results in table form: Accuracy, Precision, Recall, F1 for each model variant.
+
+15. Challenges & Limitations
+----------------------------
+• GTZAN has known issues (noise, mislabeling, duplicates) — be cautious when interpreting results.
+• Genre boundaries are subjective; single-label classification is limiting.
+• Overfitting on small datasets is common—use augmentation and regularization.
+
+16. Future Work
+---------------
+• Multi-label classification: allow songs to belong to multiple genres.
+• Transfer learning: use pre-trained audio models (e.g., VGGish) or self-supervised models.
+• Larger datasets and cross-dataset evaluation (train on one and test on another).
+• Real-time classification and integration with streaming platforms (out-of-scope for this project).
+
+17. Project Timeline (suggested)
+--------------------------------
+Week 1: Literature review, dataset download, environment setup.
+Week 2: Preprocessing pipeline, feature extraction.
+Week 3–4: Implement baseline CNN, train and evaluate.
+Week 5: Implement CRNN and RNN baselines.
+Week 6: Hyperparameter tuning, final experiments, results aggregation.
+Week 7: Report writing and presentation preparation.
+
+18. References (examples)
+-------------------------
+• G. Tzanetakis and P. Cook, "Musical genre classification of audio signals," IEEE Transactions on Speech and Audio Processing, 2002.
+• K. Choi, G. Fazekas, M. Sandler, "Automatic tagging using deep convolutional neural networks," ISMIR 2016.
+• Scikit-learn, TensorFlow, Librosa documentation.
+
+Appendix A — Example Preprocessing & Feature Extraction (librosa)
+-----------------------------------------------------------------
+```python
+import librosa
+import numpy as np
+
+def load_audio(path, sr=22050, duration=30):
+    y, _ = librosa.load(path, sr=sr, mono=True, duration=duration)
+    return y
+
+def extract_mel_spectrogram(y, sr=22050, n_mels=128, n_fft=2048, hop_length=512):
+    S = librosa.feature.melspectrogram(y, sr=sr, n_fft=n_fft, hop_length=hop_length, n_mels=n_mels)
+    S_db = librosa.power_to_db(S, ref=np.max)
+    return S_db
+```
+
+Appendix B — Tips for Reproducibility
+-------------------------------------
+• Set random seeds (numpy, tensorflow, python random).
+• Log experiments (TensorBoard, WandB).
+• Save trained model weights and preprocessing parameters.
+
+Appendix C — Submission Contents (what to include)
+--------------------------------------------------
+• Project report (this document).
+• Jupyter Notebooks / Colab notebooks with preprocessing, training, and evaluation code.
+• Saved model weights and a README with instructions to run.
+• Short demo (optional): classify a few sample audio files and show predictions.
+
+Contact / Acknowledgements
+--------------------------
+Prepared by: (Your Name)
+Supervisor: (Supervisor Name)
+Date: (Add submission date)
+
